@@ -1,6 +1,6 @@
 {
   "name": "paperize",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Distill unstructured sources into qualified goals via AI. Point it at a folder of notes, research, or markdown — get actionable goals.",
   "type": "module",
   "bin": {

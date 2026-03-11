@@ -18,6 +18,7 @@ node dist/cli.mjs --source ~/notes --output goals.json
 node dist/cli.mjs --source ~/notes --dry-run
 node dist/cli.mjs --source ~/notes --context "SaaS ideas" --model claude-opus-4-6
 node dist/cli.mjs --source ~/notes --format yaml --output goals.yaml
+node dist/cli.mjs --source ~/notes --vibe wild --output goals.json
 ```
 
 ## Architecture
@@ -48,6 +49,7 @@ node dist/cli.mjs --source ~/notes --format yaml --output goals.yaml
 - **Goal format** — Each goal is `{ title, description }`. Title is concise (~80 chars), description includes context, scope, and success criteria
 - **Guiding context** — Optional prompt that steers the AI toward specific themes or domains
 - **Output formats** — JSON (default), markdown, or YAML
+- **Vibe** — `--vibe` controls creativity: `focused` (strict, 1-5 goals), `balanced` (default), `wild` (expansive, 10-20 goals, includes speculative ideas)
 
 ### Analysis Pipeline
 

@@ -84,8 +84,12 @@ export async function runHeadless(opts) {
 
   // 3. Generate goals via AI (auto-selects single-shot or map-reduce)
   const displayModel = opts.model || 'claude-sonnet-4-6';
+  const vibe = opts.vibe || 'balanced';
   log('');
   log(`  Model: ${displayModel}`);
+  if (vibe !== 'balanced') {
+    log(`  Vibe: ${vibe}`);
+  }
   if (context) {
     log(`  Context: ${context.slice(0, 80)}${context.length > 80 ? '...' : ''}`);
   }
@@ -104,6 +108,7 @@ export async function runHeadless(opts) {
     files,
     context,
     model: opts.model,
+    vibe,
     onProgress: (line) => {
       clearStatus();
       // Color-code progress lines

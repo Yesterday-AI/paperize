@@ -15,6 +15,30 @@ import SINGLE_SHOT_SYSTEM from '../prompts/single-shot.md';
 
 const SINGLE_SHOT_LIMIT = 150_000; // chars — below this, use single-shot
 
+// ── Vibe presets ────────────────────────────────────────────────────
+
+const VIBE_PRESETS = {
+  focused: {
+    extractSuffix:
+      '\n\nBe selective — only extract ideas that are clearly articulated and actionable. Skip vague fragments and passing mentions. Quality over quantity.',
+    synthesizeSuffix:
+      '\n\nBe conservative — only produce goals with strong evidence from multiple sources. Merge aggressively. Aim for 1–5 high-confidence goals.',
+    goalRange: '1–5',
+  },
+  balanced: {
+    extractSuffix: '',
+    synthesizeSuffix: '',
+    goalRange: '5–15',
+  },
+  wild: {
+    extractSuffix:
+      '\n\nCast the widest possible net. Extract everything — half-baked ideas, wild speculation, tangential thoughts, creative leaps, even things that seem impractical. More is better. Tag speculative ideas as "weak" but still include them.',
+    synthesizeSuffix:
+      '\n\nBe expansive — preserve the full breadth of ideas. Don\'t merge aggressively. Let unusual, creative, or speculative ideas stand as their own goals. Aim for 10–20 goals. It\'s better to have too many interesting goals than to lose a diamond in the rough.',
+    goalRange: '10–20',
+  },
+};
+
 // ── Main entry point ───────────────────────────────────────────────
 
 const RETRYABLE = /network error|rate limited|overloaded/i;
@@ -29,6 +53,7 @@ const RETRYABLE = /network error|rate limited|overloaded/i;
  * @param {string} [opts.apiKey] - Anthropic API key
  * @param {string} [opts.model] - Model (default: claude-sonnet-4-6)
  * @param {number} [opts.concurrency] - Max parallel batch calls (default: 3)
+ * @param {string} [opts.vibe] - Creativity level: focused, balanced, wild (default: balanced)
  * @param {(line: string) => void} [opts.onProgress] - Log line callback
  * @param {(status: object) => void} [opts.onStatus] - Live status updates (for spinners/tickers)
  * @returns {Promise<Array<{ title: string, description: string }>>}
@@ -43,6 +68,7 @@ export async function generateGoals(opts) {
   }
 
   const model = opts.model || 'claude-sonnet-4-6';
+  const vibe = VIBE_PRESETS[opts.vibe] || VIBE_PRESETS.balanced;
   const onProgress = opts.onProgress || (() => {});
   const onStatus = opts.onStatus || (() => {});
   const concurrency = opts.concurrency || 3;
@@ -52,7 +78,7 @@ export async function generateGoals(opts) {
   const totalChars = files.reduce((sum, f) => sum + f.content.length, 0);
 
   if (totalChars <= SINGLE_SHOT_LIMIT) {
-    return singleShot({ files, context: opts.context, apiKey, model, onProgress, onStatus });
+    return singleShot({ files, context: opts.context, apiKey, model, vibe, onProgress, onStatus });
   }
 
   return mapReduce({
@@ -60,6 +86,7 @@ export async function generateGoals(opts) {
     context: opts.context,
     apiKey,
     model,
+    vibe,
     concurrency,
     onProgress,
     onStatus,
@@ -68,7 +95,7 @@ export async function generateGoals(opts) {
 
 // ── Single-shot mode ───────────────────────────────────────────────
 
-async function singleShot({ files, context, apiKey, model, onProgress, onStatus }) {
+async function singleShot({ files, context, apiKey, model, vibe, onProgress, onStatus }) {
   onProgress(`Single-shot mode (${files.length} files fit in one call)`);
 
   const { document } = buildDocument(files);
@@ -82,7 +109,7 @@ async function singleShot({ files, context, apiKey, model, onProgress, onStatus 
     {
       apiKey,
       model,
-      system: SINGLE_SHOT_SYSTEM,
+      system: SINGLE_SHOT_SYSTEM + vibe.synthesizeSuffix,
       messages: [{ role: 'user', content: userMessage }],
       maxTokens: 4096,
     },
@@ -96,7 +123,7 @@ async function singleShot({ files, context, apiKey, model, onProgress, onStatus 
 
 // ── Map-reduce mode ────────────────────────────────────────────────
 
-async function mapReduce({ files, context, apiKey, model, concurrency, onProgress, onStatus }) {
+async function mapReduce({ files, context, apiKey, model, vibe, concurrency, onProgress, onStatus }) {
   const batches = buildBatches(files);
   onProgress(
     `Map-reduce mode: ${files.length} files → ${batches.length} batch${batches.length !== 1 ? 'es' : ''}`,
@@ -128,9 +155,9 @@ async function mapReduce({ files, context, apiKey, model, concurrency, onProgres
         {
           apiKey,
           model,
-          system: EXTRACT_SYSTEM,
+          system: EXTRACT_SYSTEM + vibe.extractSuffix,
           messages: [{ role: 'user', content: batch.document }],
-          maxTokens: 8192,
+          maxTokens: 16384,
         },
         { onProgress, onStatus, statusLabel: `Batch ${batchNum}/${batches.length}` },
       );
@@ -177,9 +204,9 @@ async function mapReduce({ files, context, apiKey, model, concurrency, onProgres
     {
       apiKey,
       model,
-      system: SYNTHESIZE_SYSTEM,
+      system: SYNTHESIZE_SYSTEM + vibe.synthesizeSuffix,
       messages: [{ role: 'user', content: synthesizeInput }],
-      maxTokens: 8192,
+      maxTokens: 16384,
     },
     { onProgress, onStatus, statusLabel: 'Synthesizing' },
   );
@@ -294,10 +321,34 @@ function parseIdeasJson(text) {
   if (fenceMatch) {
     // Use the last ``` as the closing fence (greedy match)
     jsonText = fenceMatch[1].trim();
+  } else {
+    // Handle truncated responses that start with ```json but never close
+    const openFence = text.match(/```(?:json)?\s*([\s\S]*)/);
+    if (openFence) jsonText = openFence[1].trim();
   }
 
   const arrayMatch = jsonText.match(/\[[\s\S]*\]/);
-  if (!arrayMatch) return [];
+  // If no complete array found, try to fix truncated JSON starting with [
+  if (!arrayMatch) {
+    const partialArray = jsonText.match(/\[[\s\S]*/);
+    if (partialArray) {
+      const fixed = tryFixTruncatedJson(partialArray[0]);
+      if (fixed) {
+        try {
+          const ideas = JSON.parse(fixed);
+          if (!Array.isArray(ideas)) return [];
+          return ideas
+            .filter((i) => i && typeof i === 'object' && i.idea)
+            .map((i) => ({
+              idea: String(i.idea).trim(),
+              source: i.source ? String(i.source).trim() : null,
+              weight: i.weight === 'strong' ? 'strong' : 'weak',
+            }));
+        } catch { return []; }
+      }
+    }
+    return [];
+  }
 
   let ideas;
   try {

@@ -24,6 +24,7 @@ const HELP = `
   AI options:
     --model <model>            LLM model (default: claude-sonnet-4-6)
     --max-goals <n>            Maximum goals to generate (default: 10)
+    --vibe <level>             Creativity level: focused, balanced, wild (default: balanced)
 
   Output options:
     --output <path>            Write goals to file
@@ -36,6 +37,7 @@ const HELP = `
     paperize --source ./research --model claude-opus-4-6 --output goals.json
     paperize --source ~/notes --format markdown --output goals.md
     paperize --source ~/notes --format yaml --output goals.yaml
+    paperize --source ~/notes --vibe wild
     paperize --source ~/notes --dry-run
 
   Environment:
@@ -52,6 +54,7 @@ function parseArgs(argv) {
     contextFile: null,
     model: null,
     maxGoals: 10,
+    vibe: 'balanced',
     output: null,
     format: 'json',
     dryRun: false,
@@ -85,6 +88,15 @@ function parseArgs(argv) {
         break;
       case '--max-goals':
         config.maxGoals = parseInt(next, 10) || 10;
+        i++;
+        break;
+      case '--vibe':
+        if (['focused', 'balanced', 'wild'].includes(next)) {
+          config.vibe = next;
+        } else {
+          console.error(`  Unknown vibe "${next}" — use focused, balanced, or wild`);
+          process.exit(1);
+        }
         i++;
         break;
       case '--output':
@@ -132,6 +144,7 @@ async function main() {
       contextFile={config.contextFile}
       model={config.model}
       maxGoals={config.maxGoals}
+      vibe={config.vibe}
       output={config.output}
       format={config.format}
       dryRun={config.dryRun}

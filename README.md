@@ -41,7 +41,6 @@ Works with Obsidian vaults, Zettelkasten collections, research dumps, brainstorm
   - [Environment variables](#environment-variables)
 - [Supported File Types](#supported-file-types)
 - [Development](#development)
-- [Architecture](#architecture)
 - [License](#license)
 
 <br>
@@ -97,6 +96,10 @@ paperize --source ~/research --context-file brief.md
 paperize --source ./ideas --output goals.json
 paperize --source ./ideas --output goals.md --format markdown
 paperize --source ./ideas --output goals.yaml --format yaml
+
+# Control creativity level
+paperize --source ~/notes --vibe wild         # more ideas, speculative goals
+paperize --source ~/notes --vibe focused      # strict, high-confidence only
 
 # Dry run — scan only, no AI
 paperize --source ~/notes --dry-run
@@ -235,6 +238,15 @@ Each goal is self-contained and independently actionable:
 | :--- | :---------- | :------ |
 | `--model <model>` | Claude model for analysis | `claude-sonnet-4-6` |
 | `--max-goals <n>` | Maximum goals to generate | `10` |
+| `--vibe <level>` | Creativity level: `focused`, `balanced`, `wild` | `balanced` |
+
+**Vibe levels:**
+
+| Vibe | Extraction | Synthesis | Typical goals |
+| :--- | :--------- | :-------- | :------------ |
+| `focused` | Only clear, actionable ideas | Merge aggressively, strong evidence only | 1&ndash;5 |
+| `balanced` | Standard extraction | Balanced merging | 5&ndash;15 |
+| `wild` | Everything &mdash; speculative, half-baked, creative leaps | Preserve breadth, let unusual ideas stand alone | 10&ndash;20 |
 
 ### Output
 
@@ -271,38 +283,6 @@ npm test             # node --test src/logic/*.test.js
 npm run lint         # eslint src/
 npm run format       # prettier --write src/
 ```
-
-<br>
-
-## Architecture
-
-Ink/React terminal UI &mdash; React 19 state machine rendered via [Ink 6](https://github.com/vadimdemedes/ink):
-
-```text
-paperize/
-├── src/
-│   ├── cli.jsx              # Entry point, flag parsing, routing
-│   ├── app.jsx              # Ink state machine (6 steps)
-│   ├── headless.js          # Non-interactive mode
-│   ├── components/
-│   │   ├── Header.jsx       # Progress bar
-│   │   ├── StepSource.jsx   # Folder input
-│   │   ├── StepScan.jsx     # File discovery + summary
-│   │   ├── StepContext.jsx  # Optional guiding context
-│   │   ├── StepAnalyze.jsx  # AI analysis with progress
-│   │   ├── StepGoals.jsx    # Multi-select goal reviewer
-│   │   └── StepDone.jsx     # Output writer
-│   └── logic/
-│       ├── scan.js          # Recursive scanner, batching
-│       ├── scan.test.js     # 12 tests
-│       └── analyze.js       # Map-reduce pipeline (Claude API)
-├── esbuild.config.mjs       # Bundle config
-├── package.json
-└── dist/
-    └── cli.mjs              # Built bundle (single file)
-```
-
-Built with [esbuild](https://esbuild.github.io/) into a single ESM bundle. Ships as one file.
 
 <br>
 
