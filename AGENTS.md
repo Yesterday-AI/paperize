@@ -96,7 +96,7 @@ paperize/
 ├── CHANGELOG.md           # Version history
 ├── LICENSE                # MIT
 ├── README.md              # Public-facing docs
-├── package.json           # @yesterday-ai/paperize
+├── package.json           # paperize
 ├── esbuild.config.mjs     # Build config
 ├── eslint.config.mjs      # Lint config
 ├── .prettierrc             # Format config

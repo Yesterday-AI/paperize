@@ -4,7 +4,7 @@
     <strong>Distill unstructured sources into qualified goals via AI.</strong>
   </p>
   <p align="center">
-    <a href="https://www.npmjs.com/package/@yesterday-ai/paperize"><img src="https://img.shields.io/npm/v/@yesterday-ai/paperize?color=cb3837&label=npm" alt="npm version"></a>
+    <a href="https://www.npmjs.com/package/paperize"><img src="https://img.shields.io/npm/v/paperize?color=cb3837&label=npm" alt="npm version"></a>
     <a href="https://github.com/Yesterday-AI/paperize/actions/workflows/ci.yml"><img src="https://github.com/Yesterday-AI/paperize/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="License"></a>
     <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D20-brightgreen" alt="Node.js"></a>
@@ -17,7 +17,7 @@ Point Paperize at a folder of notes, ideas, research, markdown files &mdash; and
 
 Works with Obsidian vaults, Zettelkasten collections, research dumps, brainstorm folders, or any pile of text files. Handles hundreds of files through an intelligent map-reduce pipeline that never truncates your content.
 
-> **One command:** `npx @yesterday-ai/paperize --source ~/notes`
+> **One command:** `npx paperize --source ~/notes`
 
 <br>
 
@@ -49,7 +49,7 @@ Works with Obsidian vaults, Zettelkasten collections, research dumps, brainstorm
 ## Quick Start
 
 ```sh
-npx @yesterday-ai/paperize --source ~/notes
+npx paperize --source ~/notes
 ```
 
 That's it. Scans your folder, calls Claude, outputs goals as JSON.
@@ -58,7 +58,7 @@ Requires an `ANTHROPIC_API_KEY` &mdash; pass it inline or export it:
 
 ```sh
 # Inline
-ANTHROPIC_API_KEY=sk-ant-... npx @yesterday-ai/paperize --source ~/notes
+ANTHROPIC_API_KEY=sk-ant-... npx paperize --source ~/notes
 
 # Or export once
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -69,8 +69,8 @@ export ANTHROPIC_API_KEY=sk-ant-...
 ## Install
 
 ```sh
-npx @yesterday-ai/paperize              # run directly (no install)
-npm i -g @yesterday-ai/paperize         # or install globally -> paperize
+npx paperize              # run directly (no install)
+npm i -g paperize         # or install globally -> paperize
 ```
 
 Requires **Node.js 20+**.
