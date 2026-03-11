@@ -1,0 +1,23 @@
+# Node modules
+node_modules/
+
+# Build output
+dist/
+
+# System files
+.DS_Store
+
+# Draft files & folders
+~*.md
+~*/
+
+# Secrets
+.env*
+!.env*.example
+
+# Local command scratchpad (may contain secrets)
+~CMDS.md
+
+# Claude user settings (local only)
+.claude/settings.local.json
+.mcp.json
